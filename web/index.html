@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>国防知识竞赛</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <strong>国防知识竞赛</strong>
+    <div class="spacer"></div>
+    <a href="/contest">答题</a>
+    <a href="/info">历史成绩</a>
+  </div>
+</header>
+<main class="wrap">
+  <div class="card">
+    <h1>答题入口</h1>
+    <p class="muted">本系统只保留答题与历史成绩功能。比赛规则以现场通知为准。</p>
+    <div class="row">
+      <a id="login-link" class="btn" href="/auth/cas/login">CAS 登录并答题</a>
+      <a id="contest-link" class="btn" href="/contest" hidden>继续答题</a>
+      <a class="btn" href="/info">查看历史成绩</a>
+    </div>
+    <p id="login-status" class="muted" aria-live="polite">正在检查登录状态……</p>
+  </div>
+  <div class="card">
+    <h2>开发登录</h2>
+    <p class="muted">仅开发/压测环境启用，生产环境应关闭 DEV_LOGIN_ENABLED。</p>
+    <form id="dev-form" class="row">
+      <input id="dev-user" type="text" placeholder="测试学号" autocomplete="off">
+      <button type="submit">开发登录</button>
+    </form>
+    <p id="dev-msg" class="muted"></p>
+  </div>
+</main>
+<script src="/static/index.js"></script>
+</body>
+</html>

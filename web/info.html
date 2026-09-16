@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>历史成绩 - 国防知识竞赛</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <strong>历史成绩</strong>
+    <div class="spacer"></div>
+    <a href="/">首页</a>
+    <a href="/contest">答题</a>
+  </div>
+</header>
+<main class="wrap">
+  <div class="card">
+    <h1>历史成绩</h1>
+    <p>最高分：<strong id="max-score">-</strong> / <span id="total-score">100</span></p>
+    <p class="muted" id="attempts-left"></p>
+    <a class="btn" id="go-contest" href="/contest">继续答题</a>
+  </div>
+  <div class="card">
+    <h2>答卷记录</h2>
+    <table>
+      <thead><tr><th>第几次</th><th>分数</th><th>提交时间</th></tr></thead>
+      <tbody id="score-rows"></tbody>
+    </table>
+    <p id="info-error" class="error"></p>
+  </div>
+</main>
+<script src="/static/info.js"></script>
+</body>
+</html>

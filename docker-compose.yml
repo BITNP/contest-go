@@ -1,0 +1,58 @@
+# 生产部署单文件：app + PostgreSQL + Redis + Traefik labels。
+#
+# 使用：
+#   1. cp .env.example .env 并填写密码、密钥、CAS 地址
+#   2. 准备题库：cp /path/to/problems.yaml ./data/problems.yaml
+#   3. podman-compose up -d
+#
+# app 使用 GitHub Actions 构建并推送到 ghcr.io 的镜像。
+services:
+  app:
+    image: ghcr.io/bitnp/contest-go:latest
+    env_file:
+      - .env
+    volumes:
+      # 题库不进镜像，部署时把 problems.yaml 放到宿主机 ./data/ 下
+      - ./data:/app/data:ro
+    depends_on:
+      - redis
+      - postgres
+    restart: "on-failure:10"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.contest.rule: "Host(`contest.bitnp.net`)"
+      traefik.http.routers.contest.tls: "true"
+      traefik.http.services.contest.loadbalancer.server.port: "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  postgres:
+    image: postgres:18
+    env_file:
+      - .env
+    volumes:
+      - pg-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contest -d contest"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  redis-data:
+  pg-data:
