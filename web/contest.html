@@ -1,45 +1,71 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>答题 - 国防知识竞赛</title>
-  <link rel="stylesheet" href="/static/app.css">
-</head>
-<body>
-<header>
-  <div class="wrap">
-    <strong>答题</strong>
-    <div class="spacer"></div>
-    <a href="/">首页</a>
-    <a href="/info">历史成绩</a>
-  </div>
-</header>
-<main class="wrap">
-  <div class="card" id="status-card">
-    <h1 id="attempt-title">正在加载试卷……</h1>
-    <p class="muted" id="deadline-text"></p>
-    <div class="bar"><span id="time-bar"></span></div>
-    <p class="muted">剩余题目：<span id="progress-text">-</span></p>
-    <div class="bar"><span id="progress-bar"></span></div>
-  </div>
-  <div id="error" class="card error" style="display:none"></div>
-  <form id="exam-form"></form>
-  <div class="card">
-    <button id="submit-btn" type="button">提交试卷</button>
-    <p class="muted" id="save-status"></p>
-  </div>
-</main>
-<div class="modal-backdrop" id="modal">
-  <div class="modal">
-    <h2>提交确认</h2>
-    <p id="modal-text">确定提交吗？提交后不能再修改。</p>
-    <div class="row">
-      <button id="confirm-submit" type="button">确定提交</button>
-      <button id="cancel-submit" type="button" style="background:#78716c">继续答题</button>
+{{define "content"}}
+  <!-- 宽度超过 7xl / 80rem / 1280px 后，aside 与 header 右对齐 -->
+  <main class="mx-auto max-w-7xl w-full bg-img-contest bg-fixed bg-center">
+    <!-- 进度 -->
+    <aside class="sticky top-0 z-10 md:top-4 mt-4 md:mr-4 min-[1280px]:mr-0 md:ml-auto md:w-80 p-2 bg-white shadow">
+      <div class="grid grid-cols-[auto_1fr] mx-auto max-w-md items-center">
+        <div>
+          时间：还剩<span id="time-progress-text">--</span>
+        </div>
+        <div class="ml-4 h-2 flex flex-auto rounded-full bg-gray-100"
+             aria-hidden="true">
+          <div id="time-progress-bar"
+               class="h-2 w-0 flex-none rounded-l-full rounded-r-[1px] bg-indigo-600"></div>
+          <div class="-my-[0.3125rem] ml-0.5 h-[1.125rem] w-1 rounded-full bg-indigo-600"></div>
+        </div>
+        <div>
+          作答：还剩<span id="contest-progress-text">--</span>题
+        </div>
+        <div class="ml-4 h-2 flex flex-auto rounded-full bg-gray-100"
+             aria-hidden="true">
+          <div id="contest-progress-bar"
+               class="h-2 w-0 flex-none rounded-l-full rounded-r-[1px] bg-green-600"></div>
+          <div class="-my-[0.3125rem] ml-0.5 h-[1.125rem] w-1 rounded-full bg-green-600"></div>
+        </div>
+      </div>
+    </aside>
+    <!-- 题目 -->
+    <article class="mx-auto max-w-2xl pb-6 prose">
+      <div id="error"
+           class="hidden my-4 whitespace-pre-wrap bg-red-100 p-4 text-red-800 shadow"></div>
+      <form id="exam-form"></form>
+      <div class="text-center">
+        <button type="button"
+                id="submit-btn"
+                class="text-lg text-red-700 font-bold px-4 py-2 bg-white shadow rounded-full hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50">
+          <!-- https://heroicons.com/ arrow-up-tray -->
+          <!-- 图标上下不对称，不能按默认居中对齐，不然显得偏 -->
+          <svg class="size-6 inline align-text-bottom"
+               xmlns="http://www.w3.org/2000/svg"
+               fill="none"
+               viewBox="0 0 24 24"
+               stroke-width="2"
+               stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+          </svg>
+          提交
+        </button>
+      </div>
+      <p id="save-status" class="text-center text-gray-500"></p>
+    </article>
+  </main>
+
+  <div class="modal-backdrop" id="modal">
+    <div class="modal w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+      <h2 class="text-lg font-bold text-gray-900">提交确认</h2>
+      <p id="modal-text" class="text-gray-600">确定提交吗？提交后不能再修改。</p>
+      <div class="mt-4 flex flex-wrap justify-end gap-3">
+        <button id="confirm-submit"
+                type="button"
+                class="rounded-full bg-red-700 px-4 py-2 text-white shadow hover:bg-red-500">确定提交</button>
+        <button id="cancel-submit"
+                type="button"
+                class="rounded-full bg-gray-500 px-4 py-2 text-white shadow hover:bg-gray-400">继续答题</button>
+      </div>
     </div>
   </div>
-</div>
-<script src="/static/contest.js"></script>
-</body>
-</html>
+{{end}}
+
+{{define "scripts"}}
+  <script type="module" src="/static/js/dist/contest.js"></script>
+{{end}}

@@ -1,41 +1,83 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>国防知识竞赛</title>
-  <link rel="stylesheet" href="/static/app.css">
-</head>
-<body>
-<header>
-  <div class="wrap">
-    <strong>国防知识竞赛</strong>
-    <div class="spacer"></div>
-    <a href="/contest">答题</a>
-    <a href="/info">历史成绩</a>
-  </div>
-</header>
-<main class="wrap">
-  <div class="card">
-    <h1>答题入口</h1>
-    <p class="muted">本系统只保留答题与历史成绩功能。比赛规则以现场通知为准。</p>
-    <div class="row">
-      <a id="login-link" class="btn" href="/auth/cas/login">CAS 登录并答题</a>
-      <a id="contest-link" class="btn" href="/contest" hidden>继续答题</a>
-      <a class="btn" href="/info">查看历史成绩</a>
+{{define "content"}}
+  <main>
+    <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+      <div class="relative isolate overflow-hidden pt-16 shadow-2xl sm:rounded-3xl sm:px-16 md:pt-24 lg:flex lg:gap-x-24 lg:pl-24 lg:pt-0">
+        <!-- Background gradient -->
+        <svg viewBox="0 0 1024 1024"
+             class="absolute left-1/2 top-1/2 -z-10 h-[64rem] w-[64rem] -translate-y-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] sm:left-full sm:-ml-80 lg:left-1/2 lg:ml-0 lg:-translate-x-1/2 lg:translate-y-0"
+             aria-hidden="true">
+          <circle cx="512" cy="512" r="512" fill="url(#759c1415-0410-454c-8f7c-9a820de03641)" fill-opacity="0.7" />
+          <defs>
+            <radialGradient id="759c1415-0410-454c-8f7c-9a820de03641">
+              <stop stop-color="#FFDDDD" />
+              <stop offset="1" stop-color="#FF0000" />
+            </radialGradient>
+          </defs>
+        </svg>
+        <!-- Left/top: Texts -->
+        <div class="mx-auto max-w-md px-6 lg:mx-0 lg:flex-auto lg:py-16">
+          <h1 class="text-3xl font-bold tracking-tight sm:text-4xl text-center lg:text-left">
+            <span class="text-2xl sm:text-3xl">北京理工大学</span>
+            <br>
+            国防知识竞赛
+          </h1>
+          <p class="mt-6 text-lg leading-8 text-gray-600">
+            <strong>竞赛规则：</strong>系统随机抽取{{.NQuestions}}道题，限时{{.DeadlineText}}。每人限答{{.MaxTries}}次，取最高成绩为最终个人成绩。
+          </p>
+          <p class="text-lg leading-8 text-gray-600">
+            <strong>注意事项：</strong>作答过程中注意<strong class="text-red-700">答题时间</strong>，请在单次答题时限交卷，否则答题时间截止系统将自动提交；<strong class="text-red-700">切勿同时打开多个答题页面</strong>，否则只有某一页面答卷有效，影响成绩计算。
+          </p>
+          <p class="text-lg leading-8 text-gray-600">预祝同学们答题顺利，取得好成绩！</p>
+          <div class="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
+            <a href="{{if .Authenticated}}/contest{{else}}/auth/cas/login{{end}}"
+               id="url-quiz-contest"
+               class="text-lg px-4 py-2 bg-red-700 text-white shadow rounded-full hover:bg-red-500">
+              <!-- https://heroicons.com/ arrow-left-on-rectangle -->
+              <svg class="size-6 inline"
+                   xmlns="http://www.w3.org/2000/svg"
+                   fill="none"
+                   viewBox="0 0 24 24"
+                   stroke-width="1.5"
+                   stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+              </svg>
+              <span id="url-quiz-contest-text">{{if .Authenticated}}前往答题{{else}}登录并前往答题{{end}}</span>
+            </a>
+            <p id="no-tries" class="text-sm font-semibold leading-6 hidden">您已答完全部{{.MaxTries}}次机会</p>
+            <a class="text-sm font-semibold leading-6 hover:text-gray-500"
+               href="/info">历史成绩 <span aria-hidden="true">→</span></a>
+          </div>
+        </div>
+        <!-- Right/bottom: Image -->
+        <div class="mt-8 sm:-mx-16 lg:mt-0 lg:h-auto">
+          <img class="lg:h-full object-cover object-right"
+               src="/static/img/home.jpg"
+               alt="国防"
+               width="1824"
+               height="1080">
+        </div>
+      </div>
+
+      {{if .DevLogin}}
+        <div id="dev-login-card" class="mx-auto mt-8 max-w-2xl rounded-2xl bg-white p-6 shadow">
+          <h2 class="text-xl font-bold tracking-tight text-gray-900">开发登录</h2>
+          <p class="mt-1 text-sm text-gray-500">仅开发/压测环境启用，生产环境应关闭 DEV_LOGIN_ENABLED。</p>
+          <form id="dev-form" class="mt-4 flex flex-wrap items-center gap-3">
+            <input id="dev-user"
+                   type="text"
+                   placeholder="测试学号"
+                   autocomplete="off"
+                   class="rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+            <button type="submit"
+                    class="rounded-full bg-red-700 px-4 py-2 text-white shadow hover:bg-red-500">开发登录</button>
+          </form>
+          <p id="dev-msg" class="mt-2 text-sm text-gray-500"></p>
+        </div>
+      {{end}}
     </div>
-    <p id="login-status" class="muted" aria-live="polite">正在检查登录状态……</p>
-  </div>
-  <div class="card">
-    <h2>开发登录</h2>
-    <p class="muted">仅开发/压测环境启用，生产环境应关闭 DEV_LOGIN_ENABLED。</p>
-    <form id="dev-form" class="row">
-      <input id="dev-user" type="text" placeholder="测试学号" autocomplete="off">
-      <button type="submit">开发登录</button>
-    </form>
-    <p id="dev-msg" class="muted"></p>
-  </div>
-</main>
-<script src="/static/index.js"></script>
-</body>
-</html>
+  </main>
+{{end}}
+
+{{define "scripts"}}
+  <script type="module" src="/static/js/dist/index_and_info.js"></script>
+{{end}}

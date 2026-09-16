@@ -1,9 +1,12 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"html/template"
 	"mime"
 	"net/http"
 	"path"
@@ -69,15 +72,85 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) pageHandler(name string) http.HandlerFunc {
-	return func(w http.ResponseWriter, _ *http.Request) {
-		data, err := web.FS.ReadFile(name)
+	return func(w http.ResponseWriter, r *http.Request) {
+		if _, err := web.FS.ReadFile(name); err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		tmpl, err := template.ParseFS(web.FS, "layout.html", name)
 		if err != nil {
-			http.NotFound(w, nil)
+			http.Error(w, "页面模板错误", http.StatusInternalServerError)
+			return
+		}
+		var buf bytes.Buffer
+		if err := tmpl.ExecuteTemplate(&buf, "layout", s.pageData(r, name)); err != nil {
+			http.Error(w, "页面渲染失败", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(data)
+		_, _ = w.Write(buf.Bytes())
 	}
+}
+
+type pageData struct {
+	DevLogin        bool
+	Authenticated   bool
+	Username        string
+	Title           string
+	Path            string
+	ShowHeading     bool
+	NQuestions      int
+	TotalScore      int
+	MaxTries        int
+	DeadlineSeconds int
+	Year            int
+	DeadlineText    string
+}
+
+func (s *Server) pageData(r *http.Request, name string) pageData {
+	username, authenticated := s.Session.Username(r)
+
+	data := pageData{
+		DevLogin:      s.DevLogin,
+		Authenticated: authenticated,
+		Username:      username,
+		Path:          r.URL.Path,
+		MaxTries:      s.MaxTries,
+		Year:          time.Now().Year(),
+	}
+	switch name {
+	case "index.html":
+		data.Title = "主页"
+	case "contest.html":
+		data.Title = "答题"
+		data.ShowHeading = true
+	case "info.html":
+		data.Title = "历史成绩"
+		data.ShowHeading = true
+	default:
+		data.Title = "国防知识竞赛"
+	}
+
+	if s.Exam != nil {
+		for cat, count := range s.Exam.Config.PaperCounts {
+			data.NQuestions += count
+			data.TotalScore += count * s.Exam.Config.ScorePerQuestion[cat]
+		}
+		data.DeadlineSeconds = int(s.Exam.Config.Deadline.Seconds())
+		data.DeadlineText = formatDuration(s.Exam.Config.Deadline)
+		if data.MaxTries == 0 {
+			data.MaxTries = s.Exam.Config.MaxTries
+		}
+	}
+	return data
+}
+
+func formatDuration(d time.Duration) string {
+	seconds := int(d.Seconds())
+	if seconds > 0 && seconds%60 == 0 {
+		return fmt.Sprintf("%d分钟", seconds/60)
+	}
+	return fmt.Sprintf("%d秒", seconds)
 }
 
 func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
@@ -295,6 +368,7 @@ func (s *Server) handleScores(w http.ResponseWriter, r *http.Request) {
 		"scores":        views,
 		"max_score":     model.MaxScore(scores),
 		"attempts_left": left,
+		"max_tries":     s.MaxTries,
 		"total_score":   totalScore(s.Exam.Config.ScorePerQuestion, s.Exam.Config.PaperCounts),
 	})
 }

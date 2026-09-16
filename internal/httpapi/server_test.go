@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -167,4 +168,80 @@ func cookie(cookies []*http.Cookie, name string) *http.Cookie {
 		}
 	}
 	return nil
+}
+
+func TestIndexDevLoginVisibility(t *testing.T) {
+	srv, _ := apiTestServer()
+	h := srv.Handler()
+
+	for _, tc := range []struct {
+		name    string
+		enabled bool
+		want    bool
+	}{
+		{name: "disabled", enabled: false, want: false},
+		{name: "enabled", enabled: true, want: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv.DevLogin = tc.enabled
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("GET / = %d, body=%s", rec.Code, rec.Body.String())
+			}
+			body := rec.Body.String()
+			if strings.Contains(body, "{{if") {
+				t.Fatal("页面包含未渲染的模板动作")
+			}
+			if got := strings.Contains(body, "开发登录"); got != tc.want {
+				t.Fatalf("开发登录显示 = %v, want %v", got, tc.want)
+			}
+			if got := strings.Contains(body, `id="dev-form"`); got != tc.want {
+				t.Fatalf("dev-form 显示 = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestFrontendAssets(t *testing.T) {
+	srv, _ := apiTestServer()
+	h := srv.Handler()
+
+	for _, path := range []string{
+		"/static/css/dist/styles.css",
+		"/static/js/dist/index_and_info.js",
+		"/static/js/dist/contest.js",
+		"/static/js/dist/toggle_mobile_menu.js",
+		"/static/img/bit-icon.svg",
+		"/static/img/home.jpg",
+	} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Errorf("GET %s = %d", path, rec.Code)
+		}
+		if rec.Body.Len() == 0 {
+			t.Errorf("GET %s 返回空内容", path)
+		}
+	}
+}
+
+func TestPagesRender(t *testing.T) {
+	srv, _ := apiTestServer()
+	h := srv.Handler()
+
+	for _, path := range []string{"/", "/contest", "/info"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("GET %s = %d, body=%s", path, rec.Code, rec.Body.String())
+		}
+		body := rec.Body.String()
+		if strings.Contains(body, "{{") {
+			t.Errorf("GET %s 包含未渲染的模板动作", path)
+		}
+		if !strings.Contains(body, "北京理工大学") {
+			t.Errorf("GET %s 缺少校名", path)
+		}
+	}
 }

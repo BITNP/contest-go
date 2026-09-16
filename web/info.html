@@ -1,36 +1,47 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>历史成绩 - 国防知识竞赛</title>
-  <link rel="stylesheet" href="/static/app.css">
-</head>
-<body>
-<header>
-  <div class="wrap">
-    <strong>历史成绩</strong>
-    <div class="spacer"></div>
-    <a href="/">首页</a>
-    <a href="/contest">答题</a>
-  </div>
-</header>
-<main class="wrap">
-  <div class="card">
-    <h1>历史成绩</h1>
-    <p>最高分：<strong id="max-score">-</strong> / <span id="total-score">100</span></p>
-    <p class="muted" id="attempts-left"></p>
-    <a class="btn" id="go-contest" href="/contest">继续答题</a>
-  </div>
-  <div class="card">
-    <h2>答卷记录</h2>
-    <table>
-      <thead><tr><th>第几次</th><th>分数</th><th>提交时间</th></tr></thead>
-      <tbody id="score-rows"></tbody>
-    </table>
-    <p id="info-error" class="error"></p>
-  </div>
-</main>
-<script src="/static/info.js"></script>
-</body>
-</html>
+{{define "content"}}
+  <main class="bg-fixed bg-center bg-img-info">
+    <div class="mx-auto max-w-2xl py-6 px-6 lg:px-8 bg-gray-100/85 shadow">
+      <div class="prose mb-4 prose-a:no-underline">
+        <h2>成绩</h2>
+        <p class="text-center font-bold mb-2">
+          <span class="text-6xl" id="max-score">-</span><span class="text-4xl">分</span>
+        </p>
+        <p>满分<span id="total-score">{{.TotalScore}}</span>分，取最高分。</p>
+        <p id="attempts-left">正在加载答题记录……</p>
+        <div class="m-4 text-center hidden" id="go-contest-wrap">
+          <a href="/contest"
+             id="url-quiz-contest"
+             class="text-lg px-4 py-2 bg-red-700 text-white shadow rounded-full hover:bg-red-500">
+            <!-- https://heroicons.com/ arrow-left-on-rectangle -->
+            <svg class="size-6 inline"
+                 xmlns="http://www.w3.org/2000/svg"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke-width="1.5"
+                 stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+            <span id="url-quiz-contest-text">前往答题</span>
+          </a>
+        </div>
+      </div>
+      <section class="prose hidden" id="score-section">
+        <h2>答题记录</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>提交时刻</th>
+              <th>单次成绩</th>
+            </tr>
+          </thead>
+          <tbody id="score-rows"></tbody>
+        </table>
+      </section>
+      <p id="info-error" class="whitespace-pre-wrap text-red-700"></p>
+    </div>
+  </main>
+{{end}}
+
+{{define "scripts"}}
+  <script type="module" src="/static/js/dist/index_and_info.js"></script>
+{{end}}
