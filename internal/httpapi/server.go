@@ -1,23 +1,16 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"html/template"
-	"mime"
 	"net/http"
-	"path"
-	"strings"
 	"time"
 
 	"contest-go/internal/auth"
 	"contest-go/internal/cas"
 	"contest-go/internal/exam"
 	"contest-go/internal/model"
-	"contest-go/web"
 )
 
 type Server struct {
@@ -26,20 +19,36 @@ type Server struct {
 	CAS      *cas.Client
 	DevLogin bool
 	MaxTries int
+
+	templates   pageTemplates
+	static      staticAssets
+	backgrounds []string
 }
 
 type ctxKey string
 
 const userKey ctxKey = "user"
 
-func New(examSvc *exam.Service, session *auth.SessionManager, casClient *cas.Client, devLogin bool, maxTries int) *Server {
-	return &Server{
-		Exam:     examSvc,
-		Session:  session,
-		CAS:      casClient,
-		DevLogin: devLogin,
-		MaxTries: maxTries,
+// New 构建 Server。页面模板与静态资源在启动时解析、索引，失败立即返回错误。
+func New(examSvc *exam.Service, session *auth.SessionManager, casClient *cas.Client, devLogin bool, maxTries int) (*Server, error) {
+	templates, err := parsePageTemplates()
+	if err != nil {
+		return nil, err
 	}
+	static, err := loadStaticAssets()
+	if err != nil {
+		return nil, err
+	}
+	return &Server{
+		Exam:        examSvc,
+		Session:     session,
+		CAS:         casClient,
+		DevLogin:    devLogin,
+		MaxTries:    maxTries,
+		templates:   templates,
+		static:      static,
+		backgrounds: collectBackgrounds(static),
+	}, nil
 }
 
 func (s *Server) Handler() http.Handler {
@@ -60,7 +69,17 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/submit", s.requireUser(s.requireCSRF(s.handleSubmit)))
 	mux.HandleFunc("GET /api/scores", s.requireUser(s.handleScores))
 
-	return mux
+	return secureHeaders(mux)
+}
+
+// secureHeaders 给所有响应加基础安全头。
+func secureHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "same-origin")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
@@ -69,105 +88,6 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"username": usernameFrom(r)})
-}
-
-func (s *Server) pageHandler(name string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if _, err := web.FS.ReadFile(name); err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		tmpl, err := template.ParseFS(web.FS, "layout.html", name)
-		if err != nil {
-			http.Error(w, "页面模板错误", http.StatusInternalServerError)
-			return
-		}
-		var buf bytes.Buffer
-		if err := tmpl.ExecuteTemplate(&buf, "layout", s.pageData(r, name)); err != nil {
-			http.Error(w, "页面渲染失败", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(buf.Bytes())
-	}
-}
-
-type pageData struct {
-	DevLogin        bool
-	Authenticated   bool
-	Username        string
-	Title           string
-	Path            string
-	ShowHeading     bool
-	NQuestions      int
-	TotalScore      int
-	MaxTries        int
-	DeadlineSeconds int
-	Year            int
-	DeadlineText    string
-}
-
-func (s *Server) pageData(r *http.Request, name string) pageData {
-	username, authenticated := s.Session.Username(r)
-
-	data := pageData{
-		DevLogin:      s.DevLogin,
-		Authenticated: authenticated,
-		Username:      username,
-		Path:          r.URL.Path,
-		MaxTries:      s.MaxTries,
-		Year:          time.Now().Year(),
-	}
-	switch name {
-	case "index.html":
-		data.Title = "主页"
-	case "contest.html":
-		data.Title = "答题"
-		data.ShowHeading = true
-	case "info.html":
-		data.Title = "历史成绩"
-		data.ShowHeading = true
-	default:
-		data.Title = "国防知识竞赛"
-	}
-
-	if s.Exam != nil {
-		for cat, count := range s.Exam.Config.PaperCounts {
-			data.NQuestions += count
-			data.TotalScore += count * s.Exam.Config.ScorePerQuestion[cat]
-		}
-		data.DeadlineSeconds = int(s.Exam.Config.Deadline.Seconds())
-		data.DeadlineText = formatDuration(s.Exam.Config.Deadline)
-		if data.MaxTries == 0 {
-			data.MaxTries = s.Exam.Config.MaxTries
-		}
-	}
-	return data
-}
-
-func formatDuration(d time.Duration) string {
-	seconds := int(d.Seconds())
-	if seconds > 0 && seconds%60 == 0 {
-		return fmt.Sprintf("%d分钟", seconds/60)
-	}
-	return fmt.Sprintf("%d秒", seconds)
-}
-
-func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
-	name := strings.TrimPrefix(r.URL.Path, "/static/")
-	if name == "" || strings.Contains(name, "..") {
-		http.NotFound(w, r)
-		return
-	}
-	data, err := web.FS.ReadFile(name)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	if ct := mime.TypeByExtension(path.Ext(name)); ct != "" {
-		w.Header().Set("Content-Type", ct)
-	}
-	_, _ = w.Write(data)
 }
 
 func (s *Server) handleCASLogin(w http.ResponseWriter, r *http.Request) {
@@ -270,6 +190,8 @@ type questionView struct {
 type examView struct {
 	AttemptNo       int            `json:"attempt_no"`
 	Deadline        time.Time      `json:"deadline"`
+	DeadlineUnixMS  int64          `json:"deadline_unix_ms"`
+	NowUnixMS       int64          `json:"now_unix_ms"`
 	DeadlineSeconds int            `json:"deadline_seconds"`
 	Questions       []questionView `json:"questions"`
 	Answers         map[int][]int  `json:"answers"`
@@ -297,6 +219,8 @@ func (s *Server) handleGetExam(w http.ResponseWriter, r *http.Request) {
 	view := examView{
 		AttemptNo:       p.AttemptNo,
 		Deadline:        p.Deadline,
+		DeadlineUnixMS:  p.Deadline.UnixMilli(),
+		NowUnixMS:       time.Now().UnixMilli(),
 		DeadlineSeconds: int(s.Exam.Config.Deadline.Seconds()),
 		Answers:         p.Answers,
 		TotalScore:      totalScore(s.Exam.Config.ScorePerQuestion, s.Exam.Config.PaperCounts),
@@ -360,17 +284,26 @@ func (s *Server) handleScores(w http.ResponseWriter, r *http.Request) {
 	for _, sc := range scores {
 		views = append(views, scoreView{AttemptNo: sc.AttemptNo, Score: sc.Score, SubmittedAt: sc.SubmittedAt})
 	}
-	left := s.MaxTries - len(scores)
-	if left < 0 {
-		left = 0
-	}
+	maxTries := s.effectiveMaxTries()
+	left := max(maxTries-len(scores), 0)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"scores":        views,
 		"max_score":     model.MaxScore(scores),
 		"attempts_left": left,
-		"max_tries":     s.MaxTries,
+		"max_tries":     maxTries,
 		"total_score":   totalScore(s.Exam.Config.ScorePerQuestion, s.Exam.Config.PaperCounts),
 	})
+}
+
+// effectiveMaxTries 统一 MaxTries 的取值：显式配置优先，否则取答题服务配置。
+func (s *Server) effectiveMaxTries() int {
+	if s.MaxTries > 0 {
+		return s.MaxTries
+	}
+	if s.Exam != nil {
+		return s.Exam.Config.MaxTries
+	}
+	return 0
 }
 
 func (s *Server) writeExamError(w http.ResponseWriter, err error) {

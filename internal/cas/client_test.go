@@ -53,3 +53,34 @@ func TestValidateFailure(t *testing.T) {
 		t.Fatal("Validate 应该失败")
 	}
 }
+
+func TestLogoutURL(t *testing.T) {
+	// 显式配置优先
+	c := New("https://cas.example", "https://contest.example/callback")
+	c.LogoutServiceURL = "https://contest.example/bye"
+	got := c.LogoutURL()
+	want := "https://cas.example/logout?service=https%3A%2F%2Fcontest.example%2Fbye"
+	if got != want {
+		t.Fatalf("显式 LogoutServiceURL: got %q, want %q", got, want)
+	}
+
+	// 留空时回跳到站点首页（从 ServiceURL 推导），而不是 callback
+	c = New("https://cas.example", "https://contest.example/auth/cas/callback")
+	got = c.LogoutURL()
+	want = "https://cas.example/logout?service=https%3A%2F%2Fcontest.example%2F"
+	if got != want {
+		t.Fatalf("默认回跳站点首页: got %q, want %q", got, want)
+	}
+
+	// CAS 未配置时返回空串
+	c = New("", "https://contest.example/callback")
+	if got := c.LogoutURL(); got != "" {
+		t.Fatalf("无 ServerURL 应为空串: got %q", got)
+	}
+
+	// ServiceURL 无法推导站点时省略 service 参数
+	c = New("https://cas.example", "")
+	if got := c.LogoutURL(); got != "https://cas.example/logout?" {
+		t.Fatalf("无法推导站点时不带 service: got %q", got)
+	}
+}

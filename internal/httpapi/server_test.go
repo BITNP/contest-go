@@ -54,12 +54,15 @@ func apiTestServer() (*Server, http.Handler) {
 		DraftTTL: time.Hour,
 	})
 	session := auth.NewSessionManager("test", time.Hour, false)
-	return New(svc, session, nil, true, 2), nil
+	srv, err := New(svc, session, nil, true, 2)
+	if err != nil {
+		panic(err)
+	}
+	return srv, srv.Handler()
 }
 
 func TestAPIFlow(t *testing.T) {
-	srv, _ := apiTestServer()
-	h := srv.Handler()
+	_, h := apiTestServer()
 
 	dev := httptest.NewRecorder()
 	h.ServeHTTP(dev, httptest.NewRequest(http.MethodGet, "/auth/dev?username=u1", nil))
@@ -171,8 +174,7 @@ func cookie(cookies []*http.Cookie, name string) *http.Cookie {
 }
 
 func TestIndexDevLoginVisibility(t *testing.T) {
-	srv, _ := apiTestServer()
-	h := srv.Handler()
+	srv, h := apiTestServer()
 
 	for _, tc := range []struct {
 		name    string
@@ -204,15 +206,16 @@ func TestIndexDevLoginVisibility(t *testing.T) {
 }
 
 func TestFrontendAssets(t *testing.T) {
-	srv, _ := apiTestServer()
-	h := srv.Handler()
+	_, h := apiTestServer()
 
 	for _, path := range []string{
-		"/static/css/dist/styles.css",
-		"/static/js/dist/index_and_info.js",
-		"/static/js/dist/contest.js",
-		"/static/js/dist/toggle_mobile_menu.js",
+		"/static/css/app.css",
+		"/static/js/common.js",
+		"/static/js/index.js",
+		"/static/js/info.js",
+		"/static/js/contest.js",
 		"/static/img/bit-icon.svg",
+		"/static/img/background/1.jpg",
 		"/static/img/home.jpg",
 	} {
 		rec := httptest.NewRecorder()
@@ -227,8 +230,7 @@ func TestFrontendAssets(t *testing.T) {
 }
 
 func TestPagesRender(t *testing.T) {
-	srv, _ := apiTestServer()
-	h := srv.Handler()
+	_, h := apiTestServer()
 
 	for _, path := range []string{"/", "/contest", "/info"} {
 		rec := httptest.NewRecorder()

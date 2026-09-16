@@ -9,13 +9,22 @@
     <meta name="author" content="北京理工大学网络开拓者协会">
     <meta name="keywords" content="北京理工大学,竞赛,军训,国防知识">
     <title>{{.Title}} - 国防知识竞赛</title>
-    <link rel="stylesheet" href="/static/css/dist/styles.css">
+    <link rel="stylesheet" href="/static/css/app.css">
     <style>
-      .bg-img-contest {
-        background-image: url('/static/img/bg-contest.jpg');
+      /* 视口大小的固定页面背景层（答题页/成绩页） */
+      .page-bg {
+        position: fixed;
+        inset: 0;
+        z-index: -10;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
       }
-      .bg-img-info {
-        background-image: url('/static/img/bg-info.jpg');
+      /* 错误框里的重试按钮（编译版 Tailwind 未含 ml-2/underline 工具类） */
+      .error-retry {
+        margin-left: 0.5rem;
+        text-decoration: underline;
+        cursor: pointer;
       }
       #bitnp-logo {
         width: 1.4em;
@@ -23,7 +32,7 @@
         display: inline;
       }
     </style>
-    <script type="module" src="/static/js/dist/toggle_mobile_menu.js"></script>
+    <script type="module" src="/static/js/common.js"></script>
     {{template "scripts" .}}
   </head>
   <body class="h-full" data-authenticated="{{.Authenticated}}">
@@ -42,16 +51,10 @@
                 </div>
                 <div class="hidden md:block">
                   <div class="ml-10 flex items-baseline space-x-4">
-                    <a class="{{if eq .Path "/"}}bg-gray-900 text-white{{else}}text-gray-300 hover:bg-gray-700 hover:text-white{{end}} rounded-md px-3 py-2 text-sm font-medium"
-                       {{if eq .Path "/"}}aria-current="page"{{end}}
-                       href="/">主页</a>
-                    {{if .Authenticated}}
-                      <a class="{{if eq .Path "/contest"}}bg-gray-900 text-white{{else}}text-gray-300 hover:bg-gray-700 hover:text-white{{end}} rounded-md px-3 py-2 text-sm font-medium"
-                         {{if eq .Path "/contest"}}aria-current="page"{{end}}
-                         href="/contest">答题</a>
-                      <a class="{{if eq .Path "/info"}}bg-gray-900 text-white{{else}}text-gray-300 hover:bg-gray-700 hover:text-white{{end}} rounded-md px-3 py-2 text-sm font-medium"
-                         {{if eq .Path "/info"}}aria-current="page"{{end}}
-                         href="/info">历史成绩</a>
+                    {{range .NavItems}}
+                      <a class="{{.DesktopClass}}"
+                         {{if .Active}}aria-current="page"{{end}}
+                         href="{{.Href}}">{{.Label}}</a>
                     {{end}}
                   </div>
                 </div>
@@ -61,7 +64,7 @@
                 <div class="ml-4 flex items-baseline space-x-4">
                   {{if .Authenticated}}
                     <button type="button"
-                            id="logout-link"
+                            data-action="logout"
                             class="bg-transparent border-0 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium cursor-pointer">登出</button>
                     <div class="px-3 text-base font-medium text-white">{{.Username}}</div>
                   {{else}}
@@ -73,14 +76,15 @@
               <!-- Mobile menu button -->
               <div class="-mr-2 flex md:hidden">
                 <button type="button"
-                        id="toggle-mobile-menu"
+                        data-action="toggle-mobile-menu"
                         class="relative inline-flex items-center justify-center rounded-md bg-gray-800 p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                         aria-controls="mobile-menu"
                         aria-expanded="false">
                   <span class="absolute -inset-0.5"></span>
                   <span class="sr-only">打开主菜单</span>
                   <!-- Show if menu is closed -->
-                  <svg class="size-6"
+                  <svg data-menu-icon="open"
+                       class="size-6"
                        fill="none"
                        viewBox="0 0 24 24"
                        stroke-width="1.5"
@@ -89,7 +93,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                   </svg>
                   <!-- Show if menu is open -->
-                  <svg class="hidden size-6"
+                  <svg data-menu-icon="close"
+                       class="hidden size-6"
                        fill="none"
                        viewBox="0 0 24 24"
                        stroke-width="1.5"
@@ -104,23 +109,18 @@
           <!-- Mobile menu, show/hide based on menu state. -->
           <div class="md:hidden hidden" id="mobile-menu">
             <div class="space-y-1 px-2 pb-3 pt-2 sm:px-3">
-              <a class="{{if eq .Path "/"}}bg-gray-900 text-white{{else}}text-gray-300 hover:bg-gray-700 hover:text-white{{end}} block rounded-md px-3 py-2 text-base font-medium"
-                 {{if eq .Path "/"}}aria-current="page"{{end}}
-                 href="/">主页</a>
-              {{if .Authenticated}}
-                <a class="{{if eq .Path "/contest"}}bg-gray-900 text-white{{else}}text-gray-300 hover:bg-gray-700 hover:text-white{{end}} block rounded-md px-3 py-2 text-base font-medium"
-                   {{if eq .Path "/contest"}}aria-current="page"{{end}}
-                   href="/contest">答题</a>
-                <a class="{{if eq .Path "/info"}}bg-gray-900 text-white{{else}}text-gray-300 hover:bg-gray-700 hover:text-white{{end}} block rounded-md px-3 py-2 text-base font-medium"
-                   {{if eq .Path "/info"}}aria-current="page"{{end}}
-                   href="/info">历史成绩</a>
+              {{range .NavItems}}
+                <a class="{{.MobileClass}}"
+                   {{if .Active}}aria-current="page"{{end}}
+                   href="{{.Href}}">{{.Label}}</a>
               {{end}}
             </div>
             <div class="border-t border-gray-700 pb-3 pt-4 px-2 sm:px-3">
               {{if .Authenticated}}
                 <div class="px-3 text-base font-medium text-white">{{.Username}}</div>
                 <button type="button"
-                        class="logout-link-mobile bg-transparent border-0 text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium cursor-pointer">登出</button>
+                        data-action="logout"
+                        class="bg-transparent border-0 text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium cursor-pointer">登出</button>
               {{else}}
                 <a class="text-gray-300 hover:bg-gray-700 hover:text-white block rounded-md px-3 py-2 text-base font-medium"
                    href="/auth/cas/login">登录</a>
@@ -151,4 +151,16 @@
     </div>
   </body>
 </html>
+{{end}}
+
+{{/* https://heroicons.com/ arrow-left-on-rectangle，答题入口共用图标 */}}
+{{define "icon-enter"}}
+  <svg class="size-6 inline"
+       xmlns="http://www.w3.org/2000/svg"
+       fill="none"
+       viewBox="0 0 24 24"
+       stroke-width="1.5"
+       stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+  </svg>
 {{end}}

@@ -93,7 +93,11 @@ func run(logger *slog.Logger) error {
 
 	session := auth.NewSessionManager(cfg.Secret, cfg.DraftTTL, cfg.CookieSecure)
 	casClient := cas.New(cfg.CASServerURL, cfg.CASServiceURL)
-	api := httpapi.New(examSvc, session, casClient, cfg.DevLogin, cfg.MaxTries)
+	casClient.LogoutServiceURL = cfg.CASLogoutURL
+	api, err := httpapi.New(examSvc, session, casClient, cfg.DevLogin, cfg.MaxTries)
+	if err != nil {
+		return err
+	}
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,

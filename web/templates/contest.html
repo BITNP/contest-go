@@ -1,6 +1,12 @@
 {{define "content"}}
   <!-- 宽度超过 7xl / 80rem / 1280px 后，aside 与 header 右对齐 -->
-  <main class="mx-auto max-w-7xl w-full bg-img-contest bg-fixed bg-center">
+  <main class="mx-auto max-w-7xl w-full">
+    {{if .BackgroundURL}}
+      <!-- 视口大小的固定背景层：cover 拉伸铺满，任何屏幕高度下都不平铺 -->
+      <div aria-hidden="true"
+           class="page-bg"
+           style="background-image: url('{{.BackgroundURL}}')"></div>
+    {{end}}
     <!-- 进度 -->
     <aside class="sticky top-0 z-10 md:top-4 mt-4 md:mr-4 min-[1280px]:mr-0 md:ml-auto md:w-80 p-2 bg-white shadow">
       <div class="grid grid-cols-[auto_1fr] mx-auto max-w-md items-center">
@@ -67,5 +73,5 @@
 {{end}}
 
 {{define "scripts"}}
-  <script type="module" src="/static/js/dist/contest.js"></script>
+  <script type="module" src="/static/js/contest.js"></script>
 {{end}}

@@ -14,7 +14,10 @@ import (
 type Client struct {
 	ServerURL  string
 	ServiceURL string
-	HTTP       *http.Client
+	// LogoutServiceURL 是可选的 CAS 登出回跳地址（CAS_LOGOUT_URL）；
+	// 为空时登出后回到 ServiceURL。
+	LogoutServiceURL string
+	HTTP             *http.Client
 }
 
 func New(serverURL, serviceURL string) *Client {
@@ -40,9 +43,25 @@ func (c *Client) LogoutURL() string {
 	if c.ServerURL == "" {
 		return ""
 	}
+	service := c.LogoutServiceURL
+	if service == "" {
+		service = c.siteRoot()
+	}
 	q := url.Values{}
-	q.Set("service", c.ServiceURL)
+	if service != "" {
+		q.Set("service", service)
+	}
 	return c.ServerURL + "/logout?" + q.Encode()
+}
+
+// siteRoot 从 ServiceURL 推导站点根地址，作为登出后的默认回跳页面；
+// 推导失败时返回空串，此时登出后停留在 CAS 自己的登出页。
+func (c *Client) siteRoot() string {
+	u, err := url.Parse(c.ServiceURL)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host + "/"
 }
 
 type serviceResponse struct {

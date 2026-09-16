@@ -10,6 +10,16 @@
 - 多选全对得分。
 - 断线续答与自动交卷依赖 Redis 草稿和 deadline ZSET。
 
+## 前端
+
+无构建步骤：`web/templates/` 是 Go 模板，`web/static/` 下的 css/js/img 即源码，
+直接以 `/static/` 路径提供并随二进制 embed 分发。
+
+- `static/js/common.js`：所有页面共享的 ES module（API 封装、CSRF、登出、移动端菜单）
+- `static/js/index.js` / `contest.js` / `info.js`：各页面只加载自己的脚本
+- 答题页倒计时以 `/api/exam` 下发的 `now_unix_ms` 校准客户端时钟
+- 答题页/成绩页背景图放在 `static/img/background/` 下，每次渲染随机选取一张，增删图片无需改代码
+
 ## 本地开发
 
 不依赖 Redis/PostgreSQL：

@@ -1,5 +1,10 @@
 {{define "content"}}
-  <main class="bg-fixed bg-center bg-img-info">
+  <main>
+    {{if .BackgroundURL}}
+      <div aria-hidden="true"
+           class="page-bg"
+           style="background-image: url('{{.BackgroundURL}}')"></div>
+    {{end}}
     <div class="mx-auto max-w-2xl py-6 px-6 lg:px-8 bg-gray-100/85 shadow">
       <div class="prose mb-4 prose-a:no-underline">
         <h2>成绩</h2>
@@ -12,15 +17,7 @@
           <a href="/contest"
              id="url-quiz-contest"
              class="text-lg px-4 py-2 bg-red-700 text-white shadow rounded-full hover:bg-red-500">
-            <!-- https://heroicons.com/ arrow-left-on-rectangle -->
-            <svg class="size-6 inline"
-                 xmlns="http://www.w3.org/2000/svg"
-                 fill="none"
-                 viewBox="0 0 24 24"
-                 stroke-width="1.5"
-                 stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-            </svg>
+            {{template "icon-enter" .}}
             <span id="url-quiz-contest-text">前往答题</span>
           </a>
         </div>
@@ -43,5 +40,5 @@
 {{end}}
 
 {{define "scripts"}}
-  <script type="module" src="/static/js/dist/index_and_info.js"></script>
+  <script type="module" src="/static/js/info.js"></script>
 {{end}}

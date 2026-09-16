@@ -32,15 +32,7 @@
             <a href="{{if .Authenticated}}/contest{{else}}/auth/cas/login{{end}}"
                id="url-quiz-contest"
                class="text-lg px-4 py-2 bg-red-700 text-white shadow rounded-full hover:bg-red-500">
-              <!-- https://heroicons.com/ arrow-left-on-rectangle -->
-              <svg class="size-6 inline"
-                   xmlns="http://www.w3.org/2000/svg"
-                   fill="none"
-                   viewBox="0 0 24 24"
-                   stroke-width="1.5"
-                   stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-              </svg>
+              {{template "icon-enter" .}}
               <span id="url-quiz-contest-text">{{if .Authenticated}}前往答题{{else}}登录并前往答题{{end}}</span>
             </a>
             <p id="no-tries" class="text-sm font-semibold leading-6 hidden">您已答完全部{{.MaxTries}}次机会</p>
@@ -79,5 +71,5 @@
 {{end}}
 
 {{define "scripts"}}
-  <script type="module" src="/static/js/dist/index_and_info.js"></script>
+  <script type="module" src="/static/js/index.js"></script>
 {{end}}
