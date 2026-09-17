@@ -43,7 +43,7 @@ func (c Category) Label() string {
 type Choice struct {
 	ID      int    `json:"id"`
 	Content string `json:"content"`
-	Correct bool   `json:"correct"`
+	Correct bool   `json:"-"`
 }
 
 // Question 是一道题。

@@ -62,9 +62,6 @@ func run(logger *slog.Logger) error {
 			return err
 		}
 		defer rdb.Close()
-		if err := bank.SyncToRedis(ctx, rdb, questions); err != nil {
-			return err
-		}
 		drafts = store.NewRedisDraftStore(rdb)
 
 		pg, err = store.NewPGScores(ctx, cfg.PostgresURL, store.PGPoolConfig{
@@ -94,7 +91,7 @@ func run(logger *slog.Logger) error {
 	session := auth.NewSessionManager(cfg.Secret, cfg.DraftTTL, cfg.CookieSecure)
 	casClient := cas.New(cfg.CASServerURL, cfg.CASServiceURL)
 	casClient.LogoutServiceURL = cfg.CASLogoutURL
-	api, err := httpapi.New(examSvc, session, casClient, cfg.DevLogin, cfg.MaxTries)
+	api, err := httpapi.New(examSvc, session, casClient, cfg.DevLogin)
 	if err != nil {
 		return err
 	}

@@ -136,11 +136,13 @@ func (s *RedisDraftStore) Delete(ctx context.Context, username string) error {
 }
 
 func (s *RedisDraftStore) Due(ctx context.Context, now time.Time, limit int) ([]string, error) {
-	return s.rdb.ZRangeByScore(ctx, deadlinesKey(), &redis.ZRangeBy{
-		Min:    "-inf",
-		Max:    strconv.FormatInt(now.UnixMilli(), 10),
-		Offset: 0,
-		Count:  int64(limit),
+	return s.rdb.ZRangeArgs(ctx, redis.ZRangeArgs{
+		Key:     deadlinesKey(),
+		Start:   "-inf",
+		Stop:    strconv.FormatInt(now.UnixMilli(), 10),
+		ByScore: true,
+		Offset:  0,
+		Count:   int64(limit),
 	}).Result()
 }
 

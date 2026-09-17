@@ -28,7 +28,7 @@ func newTestService(now time.Time) (*Service, *store.MemoryDraftStore, *store.Me
 		MaxTries: 2,
 		DraftTTL: time.Hour,
 	})
-	svc.Now = func() time.Time { return now }
+	svc.clock = func() time.Time { return now }
 	return svc, drafts, scores
 }
 
@@ -100,7 +100,7 @@ func TestProcessDueSubmitsExpiredDraft(t *testing.T) {
 	if _, err := svc.GetOrCreatePaper(ctx, "u"); err != nil {
 		t.Fatal(err)
 	}
-	svc.Now = func() time.Time { return base.Add(2 * time.Minute) }
+	svc.clock = func() time.Time { return base.Add(2 * time.Minute) }
 	n, err := svc.ProcessDue(ctx, 10)
 	if err != nil {
 		t.Fatalf("ProcessDue: %v", err)

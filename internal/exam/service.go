@@ -35,7 +35,7 @@ type Service struct {
 	Drafts store.DraftStore
 	Scores store.ScoreStore
 	Config Config
-	Now    func() time.Time
+	clock  func() time.Time
 }
 
 func NewService(bank *model.Bank, drafts store.DraftStore, scores store.ScoreStore, cfg Config) *Service {
@@ -44,15 +44,8 @@ func NewService(bank *model.Bank, drafts store.DraftStore, scores store.ScoreSto
 		Drafts: drafts,
 		Scores: scores,
 		Config: cfg,
-		Now:    time.Now,
+		clock:  time.Now,
 	}
-}
-
-func (s *Service) now() time.Time {
-	if s.Now != nil {
-		return s.Now()
-	}
-	return time.Now()
 }
 
 func (s *Service) isOpen(now time.Time) bool {
@@ -67,7 +60,7 @@ func (s *Service) isOpen(now time.Time) bool {
 
 // GetOrCreatePaper 返回已有草稿；没有则发新卷。
 func (s *Service) GetOrCreatePaper(ctx context.Context, username string) (*model.Paper, error) {
-	now := s.now()
+	now := s.clock()
 	if !s.isOpen(now) {
 		return nil, ErrNotOpen
 	}
@@ -122,7 +115,7 @@ func (s *Service) SaveAnswer(ctx context.Context, username string, questionID in
 		}
 		return err
 	}
-	if s.now().After(p.Deadline) {
+	if s.clock().After(p.Deadline) {
 		return ErrDeadlinePassed
 	}
 
@@ -154,7 +147,7 @@ func (s *Service) SaveAnswer(ctx context.Context, username string, questionID in
 		}
 	}
 
-	ttl := p.Deadline.Sub(s.now()) + s.Config.DraftTTL
+	ttl := p.Deadline.Sub(s.clock()) + s.Config.DraftTTL
 	return s.Drafts.SaveAnswer(ctx, username, questionID, choiceIDs, ttl)
 }
 
@@ -182,7 +175,7 @@ func (s *Service) Submit(ctx context.Context, username string) (model.Score, err
 		Username:    username,
 		AttemptNo:   p.AttemptNo,
 		Score:       score,
-		SubmittedAt: s.now(),
+		SubmittedAt: s.clock(),
 	}
 	if _, err := s.Scores.Insert(ctx, result); err != nil {
 		return model.Score{}, err
@@ -200,7 +193,7 @@ func (s *Service) History(ctx context.Context, username string) ([]model.Score, 
 
 // ProcessDue 处理到期的自动交卷，返回尝试处理的草稿数。
 func (s *Service) ProcessDue(ctx context.Context, limit int) (int, error) {
-	usernames, err := s.Drafts.Due(ctx, s.now(), limit)
+	usernames, err := s.Drafts.Due(ctx, s.clock(), limit)
 	if err != nil {
 		return 0, err
 	}

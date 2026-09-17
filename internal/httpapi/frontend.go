@@ -101,7 +101,6 @@ func (s *Server) pageData(r *http.Request, name string) pageData {
 		Authenticated: authenticated,
 		Username:      username,
 		Path:          r.URL.Path,
-		MaxTries:      s.effectiveMaxTries(),
 		Year:          time.Now().Year(),
 		BackgroundURL: s.randomBackground(name),
 		NavItems:      buildNavItems(r.URL.Path, authenticated),
@@ -120,6 +119,7 @@ func (s *Server) pageData(r *http.Request, name string) pageData {
 	}
 
 	if s.Exam != nil {
+		data.MaxTries = s.Exam.Config.MaxTries
 		for cat, count := range s.Exam.Config.PaperCounts {
 			data.NQuestions += count
 			data.TotalScore += count * s.Exam.Config.ScorePerQuestion[cat]

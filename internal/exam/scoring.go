@@ -1,6 +1,10 @@
 package exam
 
-import "contest-go/internal/model"
+import (
+	"sort"
+
+	"contest-go/internal/model"
+)
 
 // CalculateScore 计算一份草稿的总分。
 // 多选采用全对得分：学生选择集合与正确集合完全一致才计分。
@@ -27,21 +31,12 @@ func sameChoiceSet(got, want []int) bool {
 	}
 	g := append([]int(nil), got...)
 	w := append([]int(nil), want...)
-	sortInts(g)
-	sortInts(w)
+	sort.Ints(g)
+	sort.Ints(w)
 	for i := range g {
 		if g[i] != w[i] {
 			return false
 		}
 	}
 	return true
-}
-
-func sortInts(xs []int) {
-	// 数据量很小，插入排序足够，也避免为了 20 个元素引入额外分配。
-	for i := 1; i < len(xs); i++ {
-		for j := i; j > 0 && xs[j] < xs[j-1]; j-- {
-			xs[j], xs[j-1] = xs[j-1], xs[j]
-		}
-	}
 }

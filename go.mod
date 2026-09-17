@@ -1,6 +1,6 @@
 module contest-go
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/jackc/pgx/v5 v5.11.0
@@ -16,7 +16,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 )

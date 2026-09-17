@@ -18,7 +18,6 @@ type Server struct {
 	Session  *auth.SessionManager
 	CAS      *cas.Client
 	DevLogin bool
-	MaxTries int
 
 	templates   pageTemplates
 	static      staticAssets
@@ -30,7 +29,7 @@ type ctxKey string
 const userKey ctxKey = "user"
 
 // New 构建 Server。页面模板与静态资源在启动时解析、索引，失败立即返回错误。
-func New(examSvc *exam.Service, session *auth.SessionManager, casClient *cas.Client, devLogin bool, maxTries int) (*Server, error) {
+func New(examSvc *exam.Service, session *auth.SessionManager, casClient *cas.Client, devLogin bool) (*Server, error) {
 	templates, err := parsePageTemplates()
 	if err != nil {
 		return nil, err
@@ -44,7 +43,6 @@ func New(examSvc *exam.Service, session *auth.SessionManager, casClient *cas.Cli
 		Session:     session,
 		CAS:         casClient,
 		DevLogin:    devLogin,
-		MaxTries:    maxTries,
 		templates:   templates,
 		static:      static,
 		backgrounds: collectBackgrounds(static),
@@ -284,7 +282,7 @@ func (s *Server) handleScores(w http.ResponseWriter, r *http.Request) {
 	for _, sc := range scores {
 		views = append(views, scoreView{AttemptNo: sc.AttemptNo, Score: sc.Score, SubmittedAt: sc.SubmittedAt})
 	}
-	maxTries := s.effectiveMaxTries()
+	maxTries := s.Exam.Config.MaxTries
 	left := max(maxTries-len(scores), 0)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"scores":        views,
@@ -293,17 +291,6 @@ func (s *Server) handleScores(w http.ResponseWriter, r *http.Request) {
 		"max_tries":     maxTries,
 		"total_score":   totalScore(s.Exam.Config.ScorePerQuestion, s.Exam.Config.PaperCounts),
 	})
-}
-
-// effectiveMaxTries 统一 MaxTries 的取值：显式配置优先，否则取答题服务配置。
-func (s *Server) effectiveMaxTries() int {
-	if s.MaxTries > 0 {
-		return s.MaxTries
-	}
-	if s.Exam != nil {
-		return s.Exam.Config.MaxTries
-	}
-	return 0
 }
 
 func (s *Server) writeExamError(w http.ResponseWriter, err error) {

@@ -119,9 +119,6 @@ func FromEnv() (Config, error) {
 	if c.Deadline <= 0 {
 		return c, fmt.Errorf("QUIZ_DEADLINE 必须大于 0")
 	}
-	if c.PaperCounts[model.CategoryMultiple] < 0 {
-		return c, fmt.Errorf("多选数量不能为负")
-	}
 	return c, nil
 }
 

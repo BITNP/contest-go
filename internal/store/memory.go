@@ -15,7 +15,6 @@ type MemoryDraftStore struct {
 	papers    map[string]model.Paper
 	deadlines map[string]time.Time
 	locks     map[string]time.Time
-	now       func() time.Time
 }
 
 func NewMemoryDraftStore() *MemoryDraftStore {
@@ -23,7 +22,6 @@ func NewMemoryDraftStore() *MemoryDraftStore {
 		papers:    make(map[string]model.Paper),
 		deadlines: make(map[string]time.Time),
 		locks:     make(map[string]time.Time),
-		now:       time.Now,
 	}
 }
 
@@ -93,7 +91,7 @@ func (s *MemoryDraftStore) Due(_ context.Context, now time.Time, limit int) ([]s
 func (s *MemoryDraftStore) LockSubmit(_ context.Context, username string, ttl time.Duration) (bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	now := s.now()
+	now := time.Now()
 	if exp, ok := s.locks[username]; ok && exp.After(now) {
 		return false, nil
 	}

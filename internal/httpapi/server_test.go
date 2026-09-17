@@ -54,7 +54,7 @@ func apiTestServer() (*Server, http.Handler) {
 		DraftTTL: time.Hour,
 	})
 	session := auth.NewSessionManager("test", time.Hour, false)
-	srv, err := New(svc, session, nil, true, 2)
+	srv, err := New(svc, session, nil, true)
 	if err != nil {
 		panic(err)
 	}

@@ -96,11 +96,11 @@ func TestMultipleAllOrNothing(t *testing.T) {
 	}
 }
 
-func TestScoringServiceNowCanBeFixed(t *testing.T) {
+func TestScoringServiceClockCanBeFixed(t *testing.T) {
 	fixed := time.Now()
 	s := scoringService()
-	s.Now = func() time.Time { return fixed }
-	if got := s.now(); !got.Equal(fixed) {
-		t.Fatal("Now 注入失败")
+	s.clock = func() time.Time { return fixed }
+	if got := s.clock(); !got.Equal(fixed) {
+		t.Fatal("clock 注入失败")
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"contest-go/internal/auth"
 	"contest-go/internal/cas"
 )
 
@@ -102,12 +103,10 @@ func TestStaticSecurityHeaders(t *testing.T) {
 }
 
 func TestLogoutReturnsCASLogoutURL(t *testing.T) {
-	srv, _ := New(nil, nil, cas.New("https://cas.example", "https://contest.example/callback"), false, 2)
+	srv, _ := New(nil, auth.NewSessionManager("test", time.Hour, false), cas.New("https://cas.example", "https://contest.example/callback"), false)
 	h := srv.Handler()
 
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/auth/dev?username=x", nil))
-
 	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -123,8 +122,7 @@ func TestLogoutReturnsCASLogoutURL(t *testing.T) {
 }
 
 func TestPageNavItems(t *testing.T) {
-	srv, h := apiTestServer()
-	_ = srv
+	_, h := apiTestServer()
 
 	// 未登录：只有主页
 	rec := httptest.NewRecorder()

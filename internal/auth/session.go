@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -119,5 +118,3 @@ func randomToken() (string, error) {
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
-
-var ErrNoSession = errors.New("no session")

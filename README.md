@@ -4,7 +4,7 @@
 
 ## 决策
 
-- 题目只存 Redis，并在进程内存缓存；启动时从 `data/problems.yaml` 导入一次。
+- 题目在启动时从 `data/problems.yaml` 载入进程内存，不写入 Redis。
 - PostgreSQL 只保存最终成绩，一张 `scores` 表。
 - 不保留 Django Admin、回顾、姓名、单位、本地密码、Celery。
 - 多选全对得分。
